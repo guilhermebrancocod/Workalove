@@ -13,24 +13,28 @@ class WorkaloveAuthController extends Controller
             'cpf' => 'required|string'
         ]);
 
-        $url = "https://workability-stg.worka.love/api/v1/students/{$cpf}/token";
+        $cpf = $request->cpf;
+
+        $url = "https://workability-stg.worka.love/api/v1/students/$cpf/token";
 
         try {
-            $response = Http::acceptJson()->post($url);
+            $response = Http::acceptJson()
+                ->withBasicAuth('faesa', '6731d48639b1144987c478afe09bbf285e8cec82')
+                ->withOptions([
+                    'verify' => false
+                ])
+                ->post($url);
 
             if ($response->successful()) {
-                $token = $response->json('token');
+                $token = $response->json('authentication_token');
 
                 if (!$token) {
                     return response()->json(['error' => 'Token não encontrado.'], 500);
                 }
 
-                $redirectUrl = "https://workability-stg.worka.love/#/login/faesa/aluno?authentication_token={$token}";
+                $redirectUrl = 'https://workability-stg.worka.love/#/login/faesa/aluno?authentication_token=' . $token;
 
-                return response()->json([
-                    'token' => $token,
-                    'redirect_url' => $redirectUrl
-                ]);
+                return redirect()->away($redirectUrl);
             }
 
             return response()->json([
